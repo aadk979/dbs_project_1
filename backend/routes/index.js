@@ -21,7 +21,7 @@ router.get('/health', (req, res) => {
 });
 
 // ---- Phase 2: Auth ----
-// router.use('/auth', require('./auth.routes'));
+router.use('/auth', require('./auth.routes'));
 
 // ---- Phase 3: Organizations ----
 // router.use('/organizations', require('./organization.routes'));
