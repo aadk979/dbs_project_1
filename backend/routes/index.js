@@ -30,7 +30,7 @@ router.use('/organizations', require('./organization.routes'));
 // (mounted inside organization routes as nested routers)
 
 // ---- Phase 5: Invites ----
-// router.use('/invites', require('./invite.routes'));
+router.use('/invites', require('./invite.routes'));
 
 // ---- Phase 8: Attendance (public submit) ----
 // router.use('/events', require('./attendanceRecord.routes'));
