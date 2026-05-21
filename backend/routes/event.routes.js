@@ -75,5 +75,6 @@ router.delete(
 // ---- Nested Event Routes ----
 router.use('/:eventId/code', require('./atc.routes'));
 router.use('/:eventId/attendance', require('./attendanceManagement.routes'));
+router.use('/:eventId/analytics', require('./eventAnalytics.routes'));
 
 module.exports = router;
