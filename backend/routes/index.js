@@ -33,7 +33,7 @@ router.use('/organizations', require('./organization.routes'));
 router.use('/invites', require('./invite.routes'));
 
 // ---- Phase 8: Attendance (public submit) ----
-// router.use('/events', require('./attendanceRecord.routes'));
+router.use('/events', require('./attendanceRecord.routes'));
 
 // ---- Phase 9: Analytics ----
 // (mounted inside organization routes)
