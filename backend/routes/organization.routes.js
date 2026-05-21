@@ -42,5 +42,6 @@ router.post(
 // ---- Nested Domain Routes ----
 router.use('/:orgId/pbac-policies', require('./pbacPolicy.routes'));
 router.use('/:orgId/members', require('./organizationMember.routes'));
+router.use('/:orgId/events', require('./event.routes'));
 
 module.exports = router;

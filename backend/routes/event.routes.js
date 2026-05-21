@@ -72,4 +72,7 @@ router.delete(
   eventController.removeAllowedUser
 );
 
+// ---- Nested Event Routes ----
+router.use('/:eventId/code', require('./atc.routes'));
+
 module.exports = router;
