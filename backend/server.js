@@ -1,101 +1,44 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-require('dotenv').config();
+'use strict';
 
-const db = require('./db');
+/**
+ * server.js
+ * HTTP server entry point.
+ * Imports the Express app and starts listening on the configured port.
+ */
 
-const app = express();
-const PORT = process.env.PORT || 5000;
+const app = require('./app');
+const env = require('./configs/env');
 
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());
-
-// Routes
-app.get('/', (req, res) => {
-  res.send('Backend is running!');
+const server = app.listen(env.port, () => {
+  console.log(`[server] Running in ${env.nodeEnv} mode`);
+  console.log(`[server] Listening on http://localhost:${env.port}`);
+  console.log(`[server] API available at http://localhost:${env.port}/api/v1`);
 });
 
-// Example route to fetch users
-app.get('/users', async (req, res) => {
-  try {
-    const result = await db.query('SELECT * FROM users');
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).send('Internal Server Error');
-  }
-});
+// Graceful shutdown
+const shutdown = (signal) => {
+  console.log(`\n[server] ${signal} received — shutting down gracefully...`);
+  server.close(() => {
+    console.log('[server] HTTP server closed.');
+    process.exit(0);
+  });
 
-app.post('/auth/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
-  }
-
-  try {
-    const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
-    const user = result.rows[0];
-
-    if (!user || user.password !== password) {
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
-
-    res.status(200).json({ accessToken: 'mockAccessToken', refreshToken: 'mockRefreshToken' });
-  } catch (error) {
-    console.error('Error during login:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-app.post('/auth/signup', async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
-  }
-
-  try {
-    const result = await db.query(
-      'INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *',
-      [email, password]
-    );
-    res.status(201).json(result.rows[0]);
-  } catch (error) {
-    console.error('Error during sign-up:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-const initializeDatabase = async () => {
-  try {
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    const result = await db.query('SELECT COUNT(*) FROM users');
-    if (parseInt(result.rows[0].count, 10) === 0) {
-      await db.query(
-        'INSERT INTO users (email, password) VALUES ($1, $2)',
-        ['admin@example.com', 'admin123']
-      );
-      console.log('Database initialized with default user.');
-    }
-  } catch (error) {
-    console.error('Error initializing database:', error);
-  }
+  // Force-quit after 10 s if graceful shutdown hangs
+  setTimeout(() => {
+    console.error('[server] Forced shutdown after timeout.');
+    process.exit(1);
+  }, 10000);
 };
 
-initializeDatabase();
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+// Catch unhandled rejections / uncaught exceptions so they don't silently swallow errors
+process.on('unhandledRejection', (reason) => {
+  console.error('[server] Unhandled promise rejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[server] Uncaught exception:', err);
+  process.exit(1);
 });
