@@ -2,16 +2,24 @@
 
 /**
  * middlewares/requirePbac.js
- * Phase 3 stub: Will be implemented in Phase 4.
- * For now, this just passes through so routes can be defined.
+ * Verifies that req.member has a specific PBAC permission.
+ * MUST be used AFTER requireOrganizationMember.
  */
+const pbacService = require('../services/pbac.service');
+const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 
 const requirePbac = (permissionKey) => asyncHandler(async (req, res, next) => {
-  // TODO: Implement in Phase 4
-  // 1. Call pbac.service.hasPermission(req.member, permissionKey)
-  // 2. Throw 403 if false
-  
+  if (!req.member) {
+    throw new ApiError(500, 'requirePbac must be used after requireOrganizationMember');
+  }
+
+  const hasPerm = await pbacService.hasPermission(req.member, permissionKey);
+
+  if (!hasPerm) {
+    throw new ApiError(403, `Insufficient permissions: Requires '${permissionKey}'`);
+  }
+
   next();
 });
 

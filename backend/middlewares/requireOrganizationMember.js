@@ -2,19 +2,33 @@
 
 /**
  * middlewares/requireOrganizationMember.js
- * Phase 3 stub: Will be implemented in Phase 4.
- * For now, this just passes through so routes can be defined.
+ * Verifies that the authenticated user is an active member of the organization
+ * specified in req.params.orgId.
+ * Attaches the member record to req.member.
  */
+const OrganizationMemberModel = require('../models/organizationMember.model');
+const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 
 const requireOrganizationMember = asyncHandler(async (req, res, next) => {
-  // TODO: Implement in Phase 4
-  // 1. Find member record for req.user.id in req.params.orgId
-  // 2. Attach to req.member
-  // 3. Throw 403 if not found or not active
-  
-  // Dummy req.member to prevent crashes downstream for now
-  req.member = { id: 'dummy', role: 'admin', is_root_admin: true };
+  const { orgId } = req.params;
+  const userId = req.user.id;
+
+  if (!orgId) {
+    throw new ApiError(400, 'Organization ID is required in the route path');
+  }
+
+  const member = await OrganizationMemberModel.findByOrgAndUser(orgId, userId);
+
+  if (!member) {
+    throw new ApiError(403, 'You are not a member of this organization');
+  }
+
+  if (member.status !== 'active') {
+    throw new ApiError(403, `Your membership status is '${member.status}'`);
+  }
+
+  req.member = member;
   next();
 });
 

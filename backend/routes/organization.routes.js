@@ -39,4 +39,8 @@ router.post(
   organizationController.regenerateJoinCode
 );
 
+// ---- Nested Domain Routes ----
+router.use('/:orgId/pbac-policies', require('./pbacPolicy.routes'));
+router.use('/:orgId/members', require('./organizationMember.routes'));
+
 module.exports = router;
