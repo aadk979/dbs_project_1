@@ -24,7 +24,7 @@ router.get('/health', (req, res) => {
 router.use('/auth', require('./auth.routes'));
 
 // ---- Phase 3: Organizations ----
-// router.use('/organizations', require('./organization.routes'));
+router.use('/organizations', require('./organization.routes'));
 
 // ---- Phase 4: PBAC Policies & Members ----
 // (mounted inside organization routes as nested routers)
