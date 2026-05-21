@@ -76,13 +76,27 @@ const listOrganizationInvites = asyncHandler(async (req, res) => {
 const createEventInvite = asyncHandler(async (req, res) => {
   const { eventId } = req.params;
   const { email } = req.body;
+  const userId = req.user.id;
 
   if (!email) throw new ApiError(400, 'Email is required');
 
-  // We don't have EventModel fully built until Phase 6, so we use a raw query to check
   const { rows } = await db.query(`SELECT id, title, organization_id FROM events WHERE id = $1`, [eventId]);
   const event = rows[0];
   if (!event) throw new ApiError(404, 'Event not found');
+
+  // Authorize: User must be an active member of the event's organization with events_write
+  const OrganizationMemberModel = require('../models/organizationMember.model');
+  const pbacService = require('../services/pbac.service');
+  
+  const member = await OrganizationMemberModel.findByOrgAndUser(event.organization_id, userId);
+  if (!member || member.status !== 'active') {
+    throw new ApiError(403, 'You are not an active member of this organization');
+  }
+
+  const hasPerm = await pbacService.hasPermission(member, 'events_write');
+  if (!hasPerm) {
+    throw new ApiError(403, "Insufficient permissions: Requires 'events_write'");
+  }
 
   const tokenStr = generateToken();
 
@@ -92,7 +106,7 @@ const createEventInvite = asyncHandler(async (req, res) => {
     email,
     token: tokenStr,
     expires_at: daysFromNow(7),
-    invited_by_member_id: req.member.id, // Assume req.member is populated by route middleware
+    invited_by_member_id: member.id,
   });
 
   emailService.sendEventInviteEmail(email, tokenStr, event.title).catch(err => {
